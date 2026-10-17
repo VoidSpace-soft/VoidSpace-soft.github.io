@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="device">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="logo.png">
+    <title>VoidSpace-Soft</title>
+    <style>
+        /* Color variables for light and dark modes */
+        :root { 
+            --bg-color: #f4f7f6;
+            --text-color: #333333;
+            --container-title: #2c3e50;
+            --desc-color: #666666;
+            --card-bg: #ffffff;
+            --card-shadow: rgba(0, 0, 0, 0.1);
+            --card-desc-color: #555555;
+            --toggle-bg: #e4e7e6;
+            --toggle-btn-active: #ffffff;
+            --toggle-icon-color: #555555;
+            --link-color: #3498db;
+            --particle-rgb: 80, 135, 190;
+            --particle-opacity: 0.55;
+            --particle-line-opacity: 0.1;
+        }
+
+        /* Dark mode colors applied when data-theme matches */
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #f4f7f6;
+            --container-title: #ecf0f1;
+            --desc-color: #b0b0b0;
+            --card-bg: #2d2d2d;
+            --card-shadow: rgba(0, 0, 0, 0.4);
+            --card-desc-color: #cccccc;
+            --toggle-bg: #333333;
+            --toggle-btn-active: #444444;
+            --toggle-icon-color: #f4f7f6;
+            --link-color: #5dade2;
+            --particle-rgb: 106, 183, 255;
+            --particle-opacity: 0.8;
+            --particle-line-opacity: 0.12;
+        }
+
+        /* Automatically apply dark colors if device theme is active and user prefers dark */
+        @media (prefers-color-scheme: dark) {
+            [data-theme="device"] {
+                --bg-color: #1a1a1a;
+                --text-color: #f4f7f6;
+                --container-title: #ecf0f1;
+                --desc-color: #b0b0b0;
+                --card-bg: #2d2d2d;
+                --card-shadow: rgba(0, 0, 0, 0.52);
+                --card-desc-color: #cccccc;
+                --toggle-bg: #333333;
+                --toggle-btn-active: #444444;
+                --toggle-icon-color: #f4f7f6;
+                --link-color: #5dade2;
+                --particle-rgb: 106, 183, 255;
+                --particle-opacity: 0.8;
+                --particle-line-opacity: 0.12;
+            }
+        }
+
+        /* Base styles for the entire page */
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center; /* Centers everything horizontally */
+            color: var(--text-color);
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #particle-canvas {
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        body > :not(#particle-canvas) {
+            position: relative;
+            z-index: 1;
+        }
+
+        /* --- Theme Switcher Styling --- */
+        .theme-switch-container {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            display: flex;
+            background-color: var(--toggle-bg);
+            padding: 4px;
+            border-radius: 30px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: background-color 0.3s;
+        }
+
+        .theme-btn {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 6px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 32px;
+            height: 32px;
+            transition: background-color 0.2s;
+        }
+
+        /* Highlight the chosen mode button */
+        .theme-btn.active {
+            background-color: var(--toggle-btn-active);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .theme-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: var(--toggle-icon-color);
+            stroke-width: 2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: stroke 0.3s;
+        }
+
+        /* The blueprint for the sliding animation */
+@keyframes slideUpFade {
+    from {
+        opacity: 0;
+        transform: translateY(40px); /* Starts 40 pixels lower */
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);    /* Moves up to its normal spot */
+    }
+}
+
+/* Base class for elements that will slide in */
+.animate-on-load {
+    opacity: 0; /* Hidden before the animation starts */
+    animation: slideUpFade 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+}
+
+/* Delay the project card so it slides up second */
+.delay-1 {
+    animation-delay: 0.3s;
+}
+
+.delay-2 {
+    animation-delay: 0.4s;
+}
+
+.delay-3 {
+    animation-delay: 0.5s;
+}
+
+.delay-4 {
+    animation-delay: 0.6s;
+}
+
+
+.delay-5 {
+    animation-delay: 0.7s;
+}
+        /* --- Content Layout Styling --- */
+        .profile-container {
+            text-align: center; /* Centers the text inside the div */
+            margin-top: 60px;
+            margin-bottom: 30px;
+            max-width: 500px;
+        }
+
+        /* Makes the profile image perfectly round */
+        .profile-img {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%; /* This creates the circle */
+            object-fit: cover;
+            border: 4px solid var(--card-bg);
+            box-shadow: 0 4px 8px var(--card-shadow);
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+
+        .username-title {
+            font-size: 2rem;
+            margin: 15px 0 5px 0;
+            color: var(--container-title);
+            transition: color 0.3s;
+        }
+
+        .profile-desc {
+            font-size: 1.1rem;
+            color: var(--desc-color);
+            line-height: 1.5;
+            transition: color 0.3s;
+        }
+
+        /* Card layout below the profile */
+        .project-card {
+            cursor: pointer;
+            background-color: var(--card-bg);
+            border-radius: 12px;
+            box-shadow: 0 4px 15px var(--card-shadow);
+            max-width: 450px;
+            width: 100%;
+            overflow: hidden; /* Keeps the image corners rounded */
+            transition: transform 0.2s, background-color 0.3s, box-shadow 0.3s;
+            margin-bottom: 50px;
+        }
+
+        /* Hover effect to make the card lift up */
+        .project-card:hover {
+            transform: translateY(-5px);
+        }
+
+        /* Image inside the project card */
+        .card-img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+
+        /* Text area inside the card */
+        .card-content {
+            padding: 20px;
+        }
+
+        .card-title {
+            font-size: 1.4rem;
+            margin: 0 0 10px 0;
+            color: var(--container-title);
+            transition: color 0.3s;
+        }
+
+        .card-desc {
+            font-size: 0.95rem;
+            color: var(--card-desc-color);
+            line-height: 1.6;
+            margin: 0;
+            transition: color 0.3s;
+        }
+
+        .card-desc a {
+            color: var(--link-color);
+            text-decoration: none;
+            transition: color 0.3s;
+        }
+
+        .card-desc a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <canvas id="particle-canvas" aria-hidden="true"></canvas>
+
+    <!-- Three-Setting Mode Switcher -->
+    <div class="theme-switch-container">
+        <!-- Light Mode Button (Sun) -->
+        <button class="theme-btn" id="light-btn" onclick="setTheme('light')" title="Light Mode">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+        </button>
+        <!-- Device Theme Button (Monitor) -->
+        <button class="theme-btn active" id="device-btn" onclick="setTheme('device')" title="Device Theme">
+            <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+        </button>
+        <!-- Dark Mode Button (Moon) -->
+        <button class="theme-btn" id="dark-btn" onclick="setTheme('dark')" title="Dark Mode">
+            <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+        </button>
+    </div>
+
+    <!-- Centered Profile Section -->
+    <div class="profile-container animate-on-load">
+        <img class="profile-img" src="logo.png" alt="VoidSpace-Soft Logo">
+        <h1 class="username-title">VoidSpace-Soft</h1>
+        <p class="profile-desc">
+          Hello, I make simple projects for fun and hope it reaches many people.
+        </p>
+    </div>
+
+    <div class="project-card animate-on-load delay-1" onclick="window.location.href='https://void-space-software.itch.io/hookin-daemons'">
+        <img class="card-img" src="hookin-daemons.png" alt="Hookin' Daemons Image">
+        <div class="card-content">
+            <h2 class="card-title">Hookin' Daemons</h2>
+            <p class="card-desc">Hook some fish for a change.</p>
+        </div>
+    </div>
+    
+    <div class="project-card animate-on-load delay-2" onclick="window.location.href='https://void-space-software.itch.io/envy-linux'">
+        <img class="card-img" src="envy.png" alt="Envy Image">
+        <div class="card-content">
+            <h2 class="card-title">Envy</h2>
+            <p class="card-desc">Envy is an app installer language made to make the process of making an installer easier.</p>
+        </div>
+    </div>
+
+    <div class="project-card animate-on-load delay-3" onclick="window.location.href='https://void-space-software.itch.io/quackvibes-made-with-python'">
+        <img class="card-img" src="quack-vibes.png" alt="QuackVibes Image">
+        <div class="card-content">
+            <h2 class="card-title">QuackVibes</h2>
+            <p class="card-desc">QuackVibes is a very simple multiplayer game where you join a LAN server and chill with your friends!</p>
+        </div>
+    </div>
+
+    <div class="project-card animate-on-load delay-4" onclick="window.location.href='https://void-space-software.itch.io/snek-game'">
+        <img class="card-img" src="snake-game.png" alt="Snake Game Image">
+        <div class="card-content">
+            <h2 class="card-title">Snake Game</h2>
+            <p class="card-desc">This is a small open source snake game I worked on.</p>
+        </div>
+    </div>
+
+    <div class="project-card animate-on-load delay-5" onclick="window.location.href='https://void-space-software.itch.io/roket-jump'">
+        <img class="card-img" src="rocket-jump.png" alt="Rocket Jump Image">
+        <div class="card-content">
+            <h2 class="card-title">Rocket Jump</h2>
+            <p class="card-desc">Rocket Jump is a fun little project we have made to test how reactive and fast, gamers are.</p>
+        </div>
+    </div>
+
+    <div class="project-card animate-on-load delay-5" onclick="window.location.href='https://void-space-software.itch.io/terrainia'">
+            <img class="card-img" src="terrainia.png" alt="Terrainia Image">
+            <div class="card-content">
+            <h2 class="card-title">Terrainia</h2>
+            <p class="card-desc">A downloadable game for Windows.</p>
+        </div>
+</div>
+<div class="project-card animate-on-load delay-5" onclick="window.location.href='https://void-space-software.itch.io/the-package'">
+        <img class="card-img" src="the-package.png" alt="The Package Image">
+        <div class="card-content">
+            <h2 class="card-title">The Package</h2>
+            <p class="card-desc">Deliver "The Package" to the altar, and please the boss...</p>
+        </div>
+</div>
+<div class="project-card animate-on-load delay-5" onclick="window.location.href='https://void-space-software.itch.io/the-paddle-game-linux'">
+        <img class="card-img" src="the-paddle-game.png" alt="The Paddle Game Image">
+        <div class="card-content">
+            <h2 class="card-title">The Paddle Game (Linux)</h2>
+            <p class="card-desc">Paddle game, for Linux.</p>
+        </div>
+</div>
+
+<div class="project-card animate-on-load delay-5" onclick="window.location.href='https://void-space-software.itch.io/the-paddle-game'">
+        <img class="card-img" src="the-paddle-game.png" alt="The Paddle Game Image">
+        <div class="card-content">
+            <h2 class="card-title">The Paddle Game (Windows)</h2>
+            <p class="card-desc">Paddle game, for Windows.</p>
+        </div>
+</div>
+
+    <!-- Javascript to handle the switching logic -->
+    <script>
+        const particleCanvas = document.getElementById('particle-canvas');
+        const particleContext = particleCanvas.getContext('2d');
+        const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+        let particles = [];
+        let particleWidth = 0;
+        let particleHeight = 0;
+        let particleRgb = '';
+        let particleOpacity = '';
+        let particleLineOpacity = '';
+        let animationFrame;
+        let previousFrameTime = 0;
+        let previousScrollY = window.scrollY;
+        let parallaxOffset = window.scrollY * 0.14;
+        let targetParallaxOffset = parallaxOffset;
+
+        function updateParticleColor() {
+            particleRgb = getComputedStyle(document.documentElement)
+                .getPropertyValue('--particle-rgb')
+                .trim();
+            particleOpacity = getComputedStyle(document.documentElement)
+                .getPropertyValue('--particle-opacity')
+                .trim();
+            particleLineOpacity = getComputedStyle(document.documentElement)
+                .getPropertyValue('--particle-line-opacity')
+                .trim();
+        }
+
+        function createParticles() {
+            const pixelRatio = Math.min(window.devicePixelRatio || 1, 1.5);
+            particleWidth = window.innerWidth;
+            particleHeight = window.innerHeight;
+            particleCanvas.width = Math.round(particleWidth * pixelRatio);
+            particleCanvas.height = Math.round(particleHeight * pixelRatio);
+            particleContext.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+
+            const count = Math.min(64, Math.max(22, Math.round(particleWidth * particleHeight / 19000)));
+            particles = Array.from({ length: count }, () => ({
+                x: Math.random() * particleWidth,
+                y: Math.random() * particleHeight,
+                radius: 1.8 + Math.random() * 1.1,
+                shade: Math.random() * 2 - 1,
+                vx: (Math.random() - 0.5) * 0.21,
+                vy: (Math.random() - 0.5) * 0.21
+            }));
+            drawParticles();
+        }
+
+        function drawParticles() {
+            particleContext.clearRect(0, 0, particleWidth, particleHeight);
+            const [red, green, blue] = particleRgb.split(',').map(Number);
+            particleContext.strokeStyle = `rgba(${particleRgb}, ${particleLineOpacity})`;
+            particleContext.lineWidth = 1;
+
+            for (let index = 0; index < particles.length; index++) {
+                const particle = particles[index];
+                const y = ((particle.y - parallaxOffset) % particleHeight + particleHeight) % particleHeight;
+                const shade = particle.shade * 14;
+                particleContext.fillStyle = `rgba(${Math.round(red + shade)}, ${Math.round(green + shade)}, ${Math.round(Math.min(255, blue + shade))}, ${particleOpacity})`;
+                particleContext.globalAlpha = 1;
+                particleContext.beginPath();
+                particleContext.arc(particle.x, y, particle.radius, 0, Math.PI * 2);
+                particleContext.fill();
+
+                for (let otherIndex = index + 1; otherIndex < particles.length; otherIndex++) {
+                    const other = particles[otherIndex];
+                    const otherY = ((other.y - parallaxOffset) % particleHeight + particleHeight) % particleHeight;
+                    const distance = Math.hypot(particle.x - other.x, y - otherY);
+                    if (distance < 120) {
+                        particleContext.globalAlpha = (1 - distance / 120) * 0.35;
+                        particleContext.beginPath();
+                        particleContext.moveTo(particle.x, y);
+                        particleContext.lineTo(other.x, otherY);
+                        particleContext.stroke();
+                    }
+                }
+            }
+
+            particleContext.globalAlpha = 1;
+        }
+
+        function animateParticles(time) {
+            if (document.hidden || reducedMotionQuery.matches) {
+                animationFrame = undefined;
+                return;
+            }
+
+            const elapsed = previousFrameTime ? Math.min(time - previousFrameTime, 32) / 16.67 : 1;
+            previousFrameTime = time;
+            parallaxOffset += (targetParallaxOffset - parallaxOffset) * 0.08;
+            for (const particle of particles) {
+                particle.x += particle.vx * elapsed;
+                particle.y += particle.vy * elapsed;
+                if (particle.x < 0) particle.x = particleWidth;
+                else if (particle.x > particleWidth) particle.x = 0;
+                if (particle.y < 0) particle.y = particleHeight;
+                else if (particle.y > particleHeight) particle.y = 0;
+            }
+            drawParticles();
+            animationFrame = requestAnimationFrame(animateParticles);
+        }
+
+        function startParticleAnimation() {
+            if (!document.hidden && !reducedMotionQuery.matches && animationFrame === undefined) {
+                previousFrameTime = 0;
+                animationFrame = requestAnimationFrame(animateParticles);
+            }
+        }
+
+        function refreshParticleAnimation() {
+            if (animationFrame !== undefined) {
+                cancelAnimationFrame(animationFrame);
+                animationFrame = undefined;
+            }
+            drawParticles();
+            startParticleAnimation();
+        }
+
+        function updateParticleParallax() {
+            const currentScrollY = window.scrollY;
+            if (!reducedMotionQuery.matches) {
+                targetParallaxOffset += (currentScrollY - previousScrollY) * 0.14;
+            }
+            previousScrollY = currentScrollY;
+        }
+
+        function setTheme(themeName) {
+            // Update the HTML root attribute
+            document.documentElement.setAttribute('data-theme', themeName);
+            updateParticleColor();
+            drawParticles();
+            
+            // Save the choice in local storage
+            localStorage.setItem('user-theme', themeName);
+            
+            // Remove active status from all buttons
+            document.getElementById('light-btn').classList.remove('active');
+            document.getElementById('device-btn').classList.remove('active');
+            document.getElementById('dark-btn').classList.remove('active');
+            
+            // Add active status to the chosen button
+            document.getElementById(themeName + '-btn').classList.add('active');
+        }
+
+        // On page load, remember what theme the user chose last time
+        const savedTheme = localStorage.getItem('user-theme') || 'device';
+        setTheme(savedTheme);
+        createParticles();
+        startParticleAnimation();
+
+        window.addEventListener('resize', createParticles);
+        window.addEventListener('scroll', updateParticleParallax, { passive: true });
+        document.addEventListener('visibilitychange', refreshParticleAnimation);
+        reducedMotionQuery.addEventListener('change', refreshParticleAnimation);
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+            if (document.documentElement.dataset.theme === 'device') {
+                updateParticleColor();
+                drawParticles();
+            }
+        });
+    </script>
+</body>
+</html>
